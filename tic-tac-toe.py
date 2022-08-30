@@ -1,6 +1,7 @@
 from machine import Pin,SPI,PWM
 import framebuf
 import time
+import random
 
 #color is BGR
 RED = 0x00F8
@@ -15,7 +16,9 @@ KEY_LEFT= Pin(16,Pin.IN,Pin.PULL_UP)
 KEY_RIGHT= Pin(20,Pin.IN,Pin.PULL_UP)
 KEY_CTRL=Pin(3,Pin.IN,Pin.PULL_UP)
 
-field = [1, 2, 0] * 3
+you_cannot = ["you cant put that here", "YOU. CANNOT. DO. THAT.", "...", ".....", "please stop", "why do you do this?", "you want to put that here so much?", "Sorry, NO", "can you please just stop?", "please", "PLEEASE", "you know what?", "they do not pay me enough to do this", "goodbye", ""]
+
+field = [0, 0, 0, 0, 0, 0, 0, 0, 1]
 
 
 class LCD_0inch96(framebuf.FrameBuffer):
@@ -225,6 +228,7 @@ def O(lcd, pos):
     #ITS DONE!!
 
 def display_field(lcd):
+    lcd.fill(BLACK)
     # 1) set 1 half of the screen white
     for i in range(0, 80):
         lcd.line(0, i, 80, i, WHITE)
@@ -247,34 +251,78 @@ def display_field(lcd):
             O(lcd, (x + 4, y + 2))
     
     lcd.display()
-def hover(lcd, pos):
+def hover(lcd, pos, col):
     #27x27
-    x, y = pos
-    thick_line(lcd, x, y, x, y + 26, GREEN)
-    thick_line(lcd, x, y + 26, x + 26, y + 26, GREEN)
-    thick_line(lcd, x + 26, y + 26, x + 26, y, GREEN)
-    thick_line(lcd, x + 26, y, x, y, GREEN)
+    y, x = pos
+    thick_line(lcd, x, y, x, y + 26, col)
+    thick_line(lcd, x, y + 26, x + 26, y + 26, col)
+    thick_line(lcd, x + 26, y + 26, x + 26, y, col)
+    thick_line(lcd, x + 26, y, x, y, col)
+
+def hover_game(lcd, hover_pos, col):
+    hover_pos = (hover_pos[0]*27, hover_pos[1]*27)
+    display_field(lcd)
+    hover(lcd, hover_pos, col)
+    lcd.display()
+
+def text(lcd, your_text_here, col):
+    for i in range(0, 75):
+        lcd.line(85 + i, 0, 85 + i, 80, BLACK)
+    words = your_text_here.split(' ')
+    sentances = [""]
+    max_ = 8
+    for word in words:
+        if len(sentances[-1]) + len(word) + 1 > max_:
+            sentances.append(word)
+        else:
+            sentances[-1] += ' ' + word
+    sentances[0] = sentances[0][1:]
+    for i in range(len(sentances)):
+        lcd.text(sentances[i], 85, i * 10 + 4, col)
+    lcd.display()
 
 def ask_user_input(lcd):
-    choice = [0, 0]
-    display_field(lcd)
+    no_count = 0
+    op = [0, 0]
+    colors = [GREEN, RED]
+    hover_game(lcd, op, colors[int(field[op[1] * 3 + op[0]] != 0)])
     while True:
         if not KEY_UP.value():
-            choice[0] = max(choice[0] - 1, 0)
-            break
+            no_count = 0
+            op[0] = max(op[0] - 1, 0)
+            #ind = colors[int(field[op[0] * 3 + op[1]] != 0)]
+            hover_game(lcd, op, colors[int(field[op[1] * 3 + op[0]] != 0)])
+            while not KEY_UP.value():
+                continue
         elif not KEY_DOWN.value():
-            choice[0] = min(choice[0] + 1, 3)
-            break
+            no_count = 0
+            op[0] = min(op[0] + 1, 2)
+            hover_game(lcd, op, colors[int(field[op[1] * 3 + op[0]] != 0)])
+            while not KEY_DOWN.value():
+                continue
         elif not KEY_RIGHT.value():
-            choice[1] += min(choice[1] + 1, 3)
-            break
+            no_count = 0
+            op[1] = min(op[1] + 1, 2)
+            hover_game(lcd, op, colors[int(field[op[1] * 3 + op[0]] != 0)])
+            while not KEY_RIGHT.value():
+                continue
         elif not KEY_LEFT.value():
-            choice[1] -= max(choice[1] - 1, 0)
-            break
-    
+            no_count = 0
+            op[1] = max(op[1] - 1, 0)
+            hover_game(lcd, op, colors[int(field[op[1] * 3 + op[0]] != 0)])
+            while not KEY_LEFT.value():
+                continue
+        elif not KEY_CTRL.value():
+            print (no_count)
+            if field[op[1] * 3 + op[0]] == 0:
+                return op
+            else:
+                text(lcd, you_cannot[no_count], RED)
+                no_count = min(no_count + 1, len(you_cannot) - 1)
+            while not KEY_CTRL.value():
+                continue
 
 if __name__=='__main__':
     lcd = LCD_0inch96()
-    display_field(lcd)
-    hover(lcd, (0, 0))
-    lcd.display()
+    ask_user_input(lcd)
+    
