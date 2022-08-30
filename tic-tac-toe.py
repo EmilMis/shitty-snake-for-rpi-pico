@@ -9,6 +9,12 @@ BLUE = 0x1F00
 WHITE = 0xFFFF
 BLACK = 0x0000
 
+KEY_UP = Pin(2,Pin.IN,Pin.PULL_UP)
+KEY_DOWN = Pin(18,Pin.IN,Pin.PULL_UP)
+KEY_LEFT= Pin(16,Pin.IN,Pin.PULL_UP)
+KEY_RIGHT= Pin(20,Pin.IN,Pin.PULL_UP)
+KEY_CTRL=Pin(3,Pin.IN,Pin.PULL_UP)
+
 field = [1, 2, 0] * 3
 
 
@@ -241,8 +247,34 @@ def display_field(lcd):
             O(lcd, (x + 4, y + 2))
     
     lcd.display()
+def hover(lcd, pos):
+    #27x27
+    x, y = pos
+    thick_line(lcd, x, y, x, y + 26, GREEN)
+    thick_line(lcd, x, y + 26, x + 26, y + 26, GREEN)
+    thick_line(lcd, x + 26, y + 26, x + 26, y, GREEN)
+    thick_line(lcd, x + 26, y, x, y, GREEN)
+
+def ask_user_input(lcd):
+    choice = [0, 0]
+    display_field(lcd)
+    while True:
+        if not KEY_UP.value():
+            choice[0] = max(choice[0] - 1, 0)
+            break
+        elif not KEY_DOWN.value():
+            choice[0] = min(choice[0] + 1, 3)
+            break
+        elif not KEY_RIGHT.value():
+            choice[1] += min(choice[1] + 1, 3)
+            break
+        elif not KEY_LEFT.value():
+            choice[1] -= max(choice[1] - 1, 0)
+            break
+    
 
 if __name__=='__main__':
     lcd = LCD_0inch96()
     display_field(lcd)
+    hover(lcd, (0, 0))
     lcd.display()
