@@ -324,10 +324,7 @@ def ask_user_input(lcd, fl):
             if field[op[1] * 3 + op[0]] == 0:
                 return op[1] * 3 + op[0]
             else:
-                print("okay")
-                print(no_count)
                 text(lcd, you_cannot[no_count], RED)
-                print("dokay")
                 no_count = min(no_count + 1, len(you_cannot) - 1)
             while not KEY_CTRL.value():
                 continue
@@ -406,10 +403,10 @@ if __name__=='__main__':
     display_field(lcd, field)
     pl = 1
     while True:
+        display_field(lcd, field)
         text(lcd, random.choice(think_text), RED)
         boards = generate_possibilities(field, pl)
         values = [ai(x, pl) for x in boards]
-        print ("done with generation, time for blood")
         field = boards[values.index(max(values))]
         display_field(lcd, field)
         
