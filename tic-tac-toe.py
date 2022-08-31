@@ -17,8 +17,21 @@ KEY_RIGHT= Pin(20,Pin.IN,Pin.PULL_UP)
 KEY_CTRL=Pin(3,Pin.IN,Pin.PULL_UP)
 
 you_cannot = ["you cant put that here", "YOU. CANNOT. DO. THAT.", "...", ".....", "please stop", "why do you do this?", "you want to put that here so much?", "Sorry, NO", "can you please just stop?", "please", "PLEEASE", "you know what?", "they do not pay me enough to do this", "goodbye", ""]
+think_text = ["thinking...", "you cannot win", "you CAN'T win", "why are you even trying?", "give up before it is too late", "haha..."]
+win_text = ["you lost... lol", "what did you expect?", "hey, its not that bad... I've won and you didnt", "...yay"]
+draw_text = ["congrats, you are not stupid", "wanna play again?", "ugghhh", "this is boring", "I dare you to win"]
 
-field = [0, 0, 0, 0, 0, 0, 0, 0, 1]
+field = [0, 0, 0, 0, 0, 0, 0, 0, 0]
+op = [0, 0]
+
+###MINIMAX CONFIG###
+WIN = 2
+DRAW = 1
+LOSE = 0
+
+dp = [3] * 20000
+
+no_count = 0
 
 
 class LCD_0inch96(framebuf.FrameBuffer):
@@ -227,7 +240,7 @@ def O(lcd, pos):
     
     #ITS DONE!!
 
-def display_field(lcd):
+def display_field(lcd, fl):
     lcd.fill(BLACK)
     # 1) set 1 half of the screen white
     for i in range(0, 80):
@@ -240,11 +253,11 @@ def display_field(lcd):
     
     #now we display the data
     
-    for i in range(len(field)):
-        if not field[i]:
+    for i in range(len(fl)):
+        if not fl[i]:
             continue
         x, y = ((i//3)*27, (i%3)*27)
-        if field[i] == 1:
+        if fl[i] == 1:
             X(lcd, (x + 4, y + 4))
         else:
             #adjust a little
@@ -259,9 +272,9 @@ def hover(lcd, pos, col):
     thick_line(lcd, x + 26, y + 26, x + 26, y, col)
     thick_line(lcd, x + 26, y, x, y, col)
 
-def hover_game(lcd, hover_pos, col):
+def hover_game(lcd, fl, hover_pos, col):
     hover_pos = (hover_pos[0]*27, hover_pos[1]*27)
-    display_field(lcd)
+    display_field(lcd, fl)
     hover(lcd, hover_pos, col)
     lcd.display()
 
@@ -281,48 +294,152 @@ def text(lcd, your_text_here, col):
         lcd.text(sentances[i], 85, i * 10 + 4, col)
     lcd.display()
 
-def ask_user_input(lcd):
-    no_count = 0
-    op = [0, 0]
+def ask_user_input(lcd, fl):
+    global no_count
     colors = [GREEN, RED]
-    hover_game(lcd, op, colors[int(field[op[1] * 3 + op[0]] != 0)])
+    hover_game(lcd, fl, op, colors[int(field[op[1] * 3 + op[0]] != 0)])
     while True:
         if not KEY_UP.value():
-            no_count = 0
             op[0] = max(op[0] - 1, 0)
             #ind = colors[int(field[op[0] * 3 + op[1]] != 0)]
-            hover_game(lcd, op, colors[int(field[op[1] * 3 + op[0]] != 0)])
+            hover_game(lcd, fl, op, colors[int(field[op[1] * 3 + op[0]] != 0)])
             while not KEY_UP.value():
                 continue
         elif not KEY_DOWN.value():
-            no_count = 0
             op[0] = min(op[0] + 1, 2)
-            hover_game(lcd, op, colors[int(field[op[1] * 3 + op[0]] != 0)])
+            hover_game(lcd, fl, op, colors[int(field[op[1] * 3 + op[0]] != 0)])
             while not KEY_DOWN.value():
                 continue
         elif not KEY_RIGHT.value():
-            no_count = 0
             op[1] = min(op[1] + 1, 2)
-            hover_game(lcd, op, colors[int(field[op[1] * 3 + op[0]] != 0)])
+            hover_game(lcd, fl, op, colors[int(field[op[1] * 3 + op[0]] != 0)])
             while not KEY_RIGHT.value():
                 continue
         elif not KEY_LEFT.value():
-            no_count = 0
             op[1] = max(op[1] - 1, 0)
-            hover_game(lcd, op, colors[int(field[op[1] * 3 + op[0]] != 0)])
+            hover_game(lcd, fl, op, colors[int(field[op[1] * 3 + op[0]] != 0)])
             while not KEY_LEFT.value():
                 continue
         elif not KEY_CTRL.value():
-            print (no_count)
             if field[op[1] * 3 + op[0]] == 0:
-                return op
+                return op[1] * 3 + op[0]
             else:
+                print("okay")
+                print(no_count)
                 text(lcd, you_cannot[no_count], RED)
+                print("dokay")
                 no_count = min(no_count + 1, len(you_cannot) - 1)
             while not KEY_CTRL.value():
                 continue
 
+def generate_possibilities(br, player):
+    possibilities = []
+    for i in range(len(br)):
+        if br[i] == 0:
+            alt = [x for x in br]
+            alt[i] = player
+            possibilities.append(alt)
+    return possibilities
+
+def win(br, player):
+    for i in range(3):
+        if br[3*i] != 0 and br[3*i] == br[3*i + 1] and br[3*i] == br[3*i + 2]:
+            if br[3*i] == player:
+                return WIN
+            else:
+                return LOSE
+    for i in range(3):
+        if br[i] != 0 and br[i] == br[i + 3] and br[i] == br[i + 6]:
+            if br[i] == player:
+                return WIN
+            else:
+                return LOSE
+    if br[0] != 0 and br[0] == br[4] and br[0] == br[8]:
+        if br[0] == player:
+            return WIN
+        else:
+            return LOSE
+    if br[2] != 0 and br[2] == br[4] and br[2] == br[6]:
+        if br[2] == player:
+            return WIN
+        else:
+            return LOSE
+    return DRAW
+
+def full(fl):
+    for el in fl:
+        if el == 0:
+            return False
+    return True
+def conv(s):
+      ans = 0
+      for c in map(int, s):
+         ans = 3 * ans + c
+      return ans
+
+def assign_n(fl):
+    n = 0
+    for el in fl:
+        n *= 10
+        n += el
+    return conv(str(n))
+    
+
+def ai(fl, player):
+    if dp[assign_n(fl)] != 3:
+        return dp[assign_n(fl)]
+    e = win(fl, player)
+    if e != DRAW:
+        dp[assign_n(fl)] = e
+        return e
+    if full(fl):
+        return DRAW
+    opp_poss = generate_possibilities(fl, (player%2) + 1)
+    opp_values = [ai(x, (player%2) + 1) for x in opp_poss]
+    s = 2 - max(opp_values)
+    dp[assign_n(fl)] = s
+    return s
+
 if __name__=='__main__':
     lcd = LCD_0inch96()
-    ask_user_input(lcd)
+    display_field(lcd, field)
+    pl = 1
+    while True:
+        text(lcd, random.choice(think_text), RED)
+        boards = generate_possibilities(field, pl)
+        values = [ai(x, pl) for x in boards]
+        print ("done with generation, time for blood")
+        field = boards[values.index(max(values))]
+        display_field(lcd, field)
+        
+        if win(field, 1) == WIN:
+            text(lcd, random.choice(win_text), RED)
+            while True:
+                continue
+        if full(field):
+            text(lcd, random.choce(draw_text), RED)
+            while True:
+                continue
+        
+        pl %= 2
+        pl += 1
+        
+        pos = ask_user_input(lcd, field)
+        field[pos] = pl
+        pl %= 2
+        pl += 1
+        #ai time babyyyy
+        display_field(lcd, field)
+        
+        if win(field, 1) == WIN:
+            text(lcd, random.choice(win_text), RED)
+            while True:
+                continue
+        if full(field):
+            text(lcd, random.choce(draw_text), RED)
+            while True:
+                continue
+        
+    
+        
     
