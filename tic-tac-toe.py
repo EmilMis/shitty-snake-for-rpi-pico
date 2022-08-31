@@ -402,6 +402,7 @@ def ai(fl, player):
 
 if __name__=='__main__':
     lcd = LCD_0inch96()
+    lcd.backlight(60)
     display_field(lcd, field)
     pl = 1
     while True:
@@ -412,14 +413,25 @@ if __name__=='__main__':
         field = boards[values.index(max(values))]
         display_field(lcd, field)
         
+        
         if win(field, 1) == WIN:
             text(lcd, random.choice(win_text), RED)
-            while True:
-                continue
+            time.sleep(1)
+            field = [0] * 9
+            for i in range(len(dp)):
+                dp[i] = 3
+        if win(field, 1) == LOSE:
+            text(lcd, "what?", RED)
+            time.sleep(1)
+            field = [0] * 9
+            for i in range(len(dp)):
+                dp[i] = 3
         if full(field):
             text(lcd, random.choice(draw_text), RED)
-            while True:
-                continue
+            time.sleep(1)
+            field = [0] * 9
+            for i in range(len(dp)):
+                dp[i] = 3
         
         pl %= 2
         pl += 1
@@ -433,12 +445,22 @@ if __name__=='__main__':
         
         if win(field, 1) == WIN:
             text(lcd, random.choice(win_text), RED)
-            while True:
-                continue
+            time.sleep(1)
+            field = [0] * 9
+            for i in range(len(dp)):
+                dp[i] = 3
+        if win(field, 1) == LOSE:
+            text(lcd, "what?", RED)
+            time.sleep(1)
+            field = [0] * 9
+            for i in range(len(dp)):
+                dp[i] = 3
         if full(field):
             text(lcd, random.choice(draw_text), RED)
-            while True:
-                continue
+            time.sleep(1)
+            field = [0] * 9
+            for i in range(len(dp)):
+                dp[i] = 3
         
     
         
