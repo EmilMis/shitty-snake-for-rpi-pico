@@ -417,21 +417,18 @@ if __name__=='__main__':
             field = [0] * 9
             for i in range(len(dp)):
                 dp[i] = 3
-            continue
         if win(field, 1) == LOSE:
             text(lcd, "what?", RED)
             time.sleep(1)
             field = [0] * 9
             for i in range(len(dp)):
                 dp[i] = 3
-            continue
         if full(field):
             text(lcd, random.choice(draw_text), RED)
             time.sleep(1)
             field = [0] * 9
             for i in range(len(dp)):
                 dp[i] = 3
-            continue
         
         pl %= 2
         pl += 1
