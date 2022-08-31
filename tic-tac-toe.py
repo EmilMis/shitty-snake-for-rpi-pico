@@ -417,7 +417,7 @@ if __name__=='__main__':
             while True:
                 continue
         if full(field):
-            text(lcd, random.choce(draw_text), RED)
+            text(lcd, random.choice(draw_text), RED)
             while True:
                 continue
         
